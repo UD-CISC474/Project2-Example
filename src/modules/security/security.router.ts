@@ -8,6 +8,7 @@ export class SecurityRouter {
     // Creates the routes for this router and returns a populated router object
     public getRouter(): express.Router {
         this.router.post("/login", this.controller.postLogin);
+        this.router.post("/register", this.controller.postRegister);
         
         return this.router;
     }
