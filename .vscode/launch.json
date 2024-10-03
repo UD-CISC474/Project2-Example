@@ -12,7 +12,10 @@
       "runtimeExecutable": "nodemon",
       "program": "${workspaceFolder}/src/app.ts",
       "preLaunchTask": "tsc: watch - tsconfig.json",
-      "outFiles": ["${workspaceFolder}/build/**/*.js"]
+      "outFiles": ["${workspaceFolder}/build/**/*.js"],
+      "env":{
+        "mongoConnectionString":"mongodb+srv://silber:0pt1cal@cluster0.rwmyl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+      }
     }
   ]
 }
