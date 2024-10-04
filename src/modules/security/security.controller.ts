@@ -28,9 +28,25 @@ export class SecurityController {
     }
 
     //returns whatever you post to it.  You can use the contents of req.body to extract information being sent to the server
-    public postLogin(req: express.Request, res: express.Response): void {
+    public async postLogin(req: express.Request, res: express.Response): Promise<void> {
         //check body for username and password
-
+        const user: UserLoginModel = { username: req.body.username, password: req.body.password };
+        if (user.username == null || user.password == null || user.username.trim().length == 0 || user.password.trim().length == 0) {
+            res.status(400).send({ error: "Username and password are required" });
+        } else {
+            try {
+            }catch (e){
+                let result = await this.mongoDBService.connect();
+                if (!result) {
+                    res.status(500).send({ error: "Database connection failed" });
+                    return;
+                }
+                let dbUser: UserLoginModel | null = await this.mongoDBService.findOne(this.database, this.collection, { username: user.username });
+                if (dbUser) {
+                    throw { error: "User already exists" };
+                }
+            }
+        }
         //lookup in database
         //if found, return token
         res.send({ body: req.body });
