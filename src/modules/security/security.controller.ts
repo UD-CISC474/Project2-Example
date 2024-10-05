@@ -30,23 +30,39 @@ export class SecurityController {
     //returns whatever you post to it.  You can use the contents of req.body to extract information being sent to the server
     public async postLogin(req: express.Request, res: express.Response): Promise<void> {
         //check body for username and password
-        const user: UserLoginModel = { username: req.body.username, password: req.body.password };
-        if (user.username == null || user.password == null || user.username.trim().length == 0 || user.password.trim().length == 0) {
-            res.status(400).send({ error: "Username and password are required" });
-        } else {
-            try {
-            }catch (e){
-                let result = await this.mongoDBService.connect();
-                if (!result) {
-                    res.status(500).send({ error: "Database connection failed" });
-                    return;
-                }
-                let dbUser: UserLoginModel | null = await this.mongoDBService.findOne(this.database, this.collection, { username: user.username });
-                if (dbUser) {
-                    throw { error: "User already exists" };
+        return new Promise(async (resolve, reject) => {
+            const user: UserLoginModel = { username: req.body.username, password: req.body.password };
+            if (user.username == null || user.password == null || user.username.trim().length == 0 || user.password.trim().length == 0) {
+                res.status(400).send({ error: "Username and password are required" });
+            } else {
+                try {
+                    let result = await this.mongoDBService.connect();
+                    if (!result) {
+                        res.status(500).send({ error: "Database connection failed" });
+                        return;
+                    }
+                    let dbUser: UserLoginModel | null = await this.mongoDBService.findOne(this.database, this.collection, { username: user.username });
+                    if (!dbUser) {
+                        throw { error: "User not found" };
+                    }
+                    bcrypt.compare(user.password, dbUser.password, (err, result) => {
+                        if (err) {
+                            throw { error: "Password comparison failed" };
+                        } else if (result) {
+                            dbUser.password = "****";
+                            res.send({ token: this.makeToken(dbUser) });
+                        } else {
+                            throw { error: "Password does not match" };
+                        }
+                    });
+                } catch (err) {
+                    console.error(err);
+                    res.status(500).send(err);
+                } finally {
+                    this.mongoDBService.close();
                 }
             }
-        }
+        });
         //lookup in database
         //if found, return token
         res.send({ body: req.body });
@@ -83,8 +99,6 @@ export class SecurityController {
             } finally {
                 this.mongoDBService.close();
             }
-
-
         }
     }
 }
