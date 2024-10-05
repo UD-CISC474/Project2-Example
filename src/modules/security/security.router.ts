@@ -9,7 +9,7 @@ export class SecurityRouter {
     public getRouter(): express.Router {
         this.router.post("/login", this.controller.postLogin);
         this.router.post("/register", this.controller.postRegister);
-        
+        this.router.get("/test", [this.controller.securityMiddleware],this.controller.getTest);
         return this.router;
     }
 }
