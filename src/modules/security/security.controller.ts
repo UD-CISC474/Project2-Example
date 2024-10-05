@@ -2,7 +2,7 @@ import express from "express";
 import { UserLoginModel } from "./security.models";
 import { MongoDBService } from "../database/mongodb.service";
 import bcrypt from 'bcryptjs';
-
+import jwt from 'jsonwebtoken';
 
 export class SecurityController {
 
@@ -11,7 +11,9 @@ export class SecurityController {
     private collection = "users";
 
     private makeToken(user: UserLoginModel): string {
-        return "test";
+        
+        var token = jwt.sign(user, process.env.secret || "secret");
+        return token;
     }
     private encryptPassword(password: string): Promise<string> {
         return new Promise((resolve, reject) => {
@@ -28,7 +30,7 @@ export class SecurityController {
     }
 
     //returns whatever you post to it.  You can use the contents of req.body to extract information being sent to the server
-    public async postLogin(req: express.Request, res: express.Response): Promise<void> {
+    public postLogin=async (req: express.Request, res: express.Response): Promise<void>=> {
         //check body for username and password
         return new Promise(async (resolve, reject) => {
             const user: UserLoginModel = { username: req.body.username, password: req.body.password };
@@ -60,12 +62,12 @@ export class SecurityController {
                     res.status(500).send(err);
                 } finally {
                     this.mongoDBService.close();
+                    resolve();
                 }
             }
         });
         //lookup in database
         //if found, return token
-        res.send({ body: req.body });
     }
     public postRegister = async (req: express.Request, res: express.Response): Promise<void> => {
         const user: UserLoginModel = { username: req.body.username, password: req.body.password };
