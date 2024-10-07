@@ -14,6 +14,27 @@ export class OrderController {
     private mongoDBService: MongoDBService = new MongoDBService(process.env.mongoConnectionString || "mongodb://localhost:27017");
 	private settings=new OrderSettings();
 
+	/* getAllOrders(req: express.Request, res: express.Response): Promise<void>
+		@param {express.Request} req: The request object
+		@param {express.Response} res: The response object
+		@returns {Promise<void>}:
+		@remarks: Handles the get orders request
+		@async
+	*/
+	getAllOrders = async (req: express.Request, res: express.Response): Promise<void> => {
+		try {
+			let result = await this.mongoDBService.connect();
+			if (!result) {
+				res.status(500).send({ error: "Database connection failed" });
+				return;
+			}
+			let orders = this.mongoDBService.find<OrderModel>(this.settings.database, this.settings.collection,{});
+			res.send(orders);
+		} catch (error) {
+			res.status(500).send({ error: error });
+		}
+	}
+
 	/* getOrders(req: express.Request, res: express.Response): Promise<void>
 		@param {express.Request} req: The request object
 		@param {express.Response} res: The response object
@@ -49,7 +70,7 @@ export class OrderController {
 				res.status(500).send({ error: "Database connection failed" });
 				return;
 			}
-			let items = this.mongoDBService.findOne<OrderModel>(this.settings.database, this.settings.collection,{OrderNumber:req.params.orderno});
+			let items = this.mongoDBService.findOne<OrderModel>(this.settings.database, this.settings.collection,{OrderNumber:req.params.orderno,user:req.body.user._id});
 			res.send(items);
 		} catch (error) {
 			res.status(500).send({ error: error });
