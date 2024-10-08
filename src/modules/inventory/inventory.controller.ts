@@ -28,7 +28,7 @@ export class InventoryController {
 				res.status(500).send({ error: "Database connection failed" });
 				return;
 			}
-			let items = this.mongoDBService.find<InventoryItemModel>(this.settings.database, this.settings.collection, {});
+			let items = await this.mongoDBService.find<InventoryItemModel>(this.settings.database, this.settings.collection, {});
 			res.send(items);
 		} catch (error) {
 			res.status(500).send({ error: error });
@@ -49,7 +49,7 @@ export class InventoryController {
 				res.status(500).send({ error: "Database connection failed" });
 				return;
 			}
-			let items = this.mongoDBService.findOne<InventoryItemModel>(this.settings.database, this.settings.collection, { _id: req.params.id });
+			let items = await this.mongoDBService.findOne<InventoryItemModel>(this.settings.database, this.settings.collection, { _id: req.params.id });
 			res.send(items);
 		} catch (error) {
 			res.status(500).send({ error: error });
