@@ -1,5 +1,5 @@
 import express from "express";
-import { MongoDBService } from "../database/mongodb.service";
+import { MongoDBService, ObjectId } from "../database/mongodb.service";
 import { InventorySettings } from "./inventory.settings";
 import { InventoryItemModel } from "./inventory.models";
 
@@ -36,7 +36,7 @@ export class InventoryController {
 	}
 	/* getItem(req: express.Request, res: express.Response): Promise<void>
 		@param {express.Request} req: The request object
-			expects the id of the item to be in the params array of the request object
+			expects the partnumber of the item to be in the params array of the request object as id
 		@param {express.Response} res: The response object
 		@returns {Promise<void>}:
 		@remarks: Handles the get item request
@@ -49,7 +49,11 @@ export class InventoryController {
 				res.status(500).send({ error: "Database connection failed" });
 				return;
 			}
-			let items = await this.mongoDBService.findOne<InventoryItemModel>(this.settings.database, this.settings.collection, { _id: req.params.id });
+			let items = await this.mongoDBService.findOne<InventoryItemModel>(this.settings.database, this.settings.collection, { partno: req.params.id });
+			if (!items) {
+				res.send(404).send({ error: "Item not found" });
+				return;
+			}
 			res.send(items);
 		} catch (error) {
 			res.status(500).send({ error: error });
@@ -91,7 +95,7 @@ export class InventoryController {
 
 	/* putUpdateItem(req: express.Request, res: express.Response): Promise<void>
 		@param {express.Request} req: The request object
-		expects the id of the item to be in the params array of the request object
+		expects the partno of the item to be in the params array of the request object as id
 		@param {express.Response} res: The response object
 		@returns {Promise<void>}:
 		@remarks: Handles the update item request
@@ -111,7 +115,8 @@ export class InventoryController {
 				price: req.body.price,
 				partno: req.body.partno
 			};
-			const success = await this.mongoDBService.updateOne(this.settings.database, this.settings.collection, { _id: req.params.id }, item);
+			let command={$set:item};
+			const success = await this.mongoDBService.updateOne(this.settings.database, this.settings.collection, { partno: req.params.id }, command);
 			if (success)
 				res.send({ success: true });
 			else
@@ -124,7 +129,7 @@ export class InventoryController {
 
 	/* deleteItem(req: express.Request, res: express.Response): Promise<void>
 			@param {express.Request} req: The request object
-			expects the id of the item to be in the params array of the request object
+			expects the partno of the item to be in the params array of the request object as id
 		@param {express.Response} res: The response object
 		@returns {Promise<void>}:
 		@remarks: Handles the delete item request and archives the item
@@ -137,7 +142,7 @@ export class InventoryController {
 				res.status(500).send({ error: "Database connection failed" });
 				return;
 			}
-			const item = await this.mongoDBService.findOne<InventoryItemModel>(this.settings.database, this.settings.collection, { _id: req.params.id });
+			const item = await this.mongoDBService.findOne<InventoryItemModel>(this.settings.database, this.settings.collection, { partno: req.params.id });
 			if (!item) {
 				res.status(404).send({ error: "Item not found" });
 				return;
@@ -148,7 +153,7 @@ export class InventoryController {
 				console.log("Failed to archive item");
 				return;
 			}
-			success = await this.mongoDBService.deleteOne(this.settings.database, this.settings.collection, { _id: req.params.id });
+			success = await this.mongoDBService.deleteOne(this.settings.database, this.settings.collection, { partno: req.params.id });
 			if (!success) {
 				res.status(500).send({ error: "Failed to delete item" });
 				return;
@@ -156,5 +161,6 @@ export class InventoryController {
 		} catch (error) {
 			res.status(500).send({ error: error });
 		}
+		res.send({ success: true });
 	}
 }

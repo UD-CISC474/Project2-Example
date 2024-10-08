@@ -15,7 +15,6 @@ export interface AddressModel{
 	* @interface: LineItemModel
 */
 export interface LineItemModel{
-	partid: string;
 	partno: string;
 	description: string;
 	quantity: number;

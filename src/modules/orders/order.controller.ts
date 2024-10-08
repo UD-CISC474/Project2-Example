@@ -14,6 +14,30 @@ export class OrderController {
     private mongoDBService: MongoDBService = new MongoDBService(process.env.mongoConnectionString || "mongodb://localhost:27017");
 	private settings=new OrderSettings();
 
+	/* generateOrderNumber():string
+		@returns {string}: A string that represents the next order number
+		@remarks: Generates the next order number
+		@throws: {Error}: Throws an error if the order number cannot be generated
+	*/
+	private generateOrderNumber= async ():Promise<string>=>{
+		//.findOneAndUpdate({_id: ObjectId('5ed7f23789bcd51e9c6a82e0')}, {$inc: {nextTicket: 1}}, {returnOriginal: false})
+		//see if orderNumber collection exists and if not seed it
+		const result = await this.mongoDBService.connect();
+		if (!result) {
+			throw("Database connection failed");
+		}
+		let collection=await this.mongoDBService.find(this.settings.database, this.settings.orderNumberCollection,{});
+		if (collection.length===0){
+			await this.mongoDBService.insertOne(this.settings.database, this.settings.orderNumberCollection,{nextOrder:1000});
+		}
+		//get the last order number
+		let ordernumber=await this.mongoDBService.findOneAndUpdate<{nextOrder:number}>(this.settings.database,this.settings.collection,{}, {$inc: {nextTicket: 1}});
+		if (!ordernumber){
+			throw("Failed to generate order number");
+		}
+		return (ordernumber.nextOrder+1).toString();
+	}
+
 	/* getAllOrders(req: express.Request, res: express.Response): Promise<void>
 		@param {express.Request} req: The request object
 		@param {express.Response} res: The response object
@@ -93,8 +117,8 @@ export class OrderController {
 				return;
 			}
 			let order: OrderModel = {
-				orderNumber: req.body.OrderNumber,
-				orderDate: req.body.OrderDate,
+				orderNumber: await this.generateOrderNumber(),
+				orderDate: new Date(),
 				billingAddress: req.body.BillingAddress,
 				shippingAddress: req.body.ShippingAddress,
 				email: req.body.user.email,

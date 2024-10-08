@@ -1,4 +1,5 @@
 import { MongoClient } from 'mongodb';
+export {ObjectId} from 'mongodb';
 
 export class MongoDBService {
 	client: MongoClient;
@@ -64,5 +65,18 @@ export class MongoDBService {
 	public async close(): Promise<void> {
 		await this.client.close()
 		console.log("Closed connection to MongoDB")
+	}
+	public async findOneAndUpdate<T>(database: string, collection: string, query: any, update: any): Promise<T | null> {
+		try {
+			const result = await this.client.db(database).collection(collection).findOneAndUpdate(query, update, {});
+			if (!result) {
+				console.error("Error finding and updating document in " + collection + ": document not found")
+				return null;
+			}
+			return result.value as T;
+		} catch (err) {
+			console.error("Error finding and updating document in " + collection + ":", err)
+			return null;
+		}
 	}
 }
