@@ -23,8 +23,9 @@ export class SecurityController {
         @remarks: Creates a token from the user
     */
     private makeToken(user: UserLoginModel): string {
-
-        var token = jwt.sign(user, process.env.secret || "secret");
+        var token = jwt.sign(user, process.env.secret || "secret",{
+            expiresIn: "2y"
+        });
         return token;
     }
 
@@ -48,7 +49,23 @@ export class SecurityController {
         });
     }
 
-    
+    public getTokenInfo = async (req: express.Request, res: express.Response): Promise<void> => {
+        return new Promise(async (resolve, reject) => {
+            if (!req.headers.authorization) {
+                res.status(401).send({ error: "Unauthorized" });
+            } else {
+                let token = req.headers.authorization.replace("Bearer ", "");
+                let payload = jwt.verify(token, process.env.secret || "secret");       
+                if (!payload || typeof(payload)=== "string") {
+                    res.status(401).send({ error: "Unauthorized" });
+                    return;
+                }
+                let time=payload.exp||0;
+                res.send({payload:payload,expires:new Date(time*1000)});
+            }
+            resolve();
+        });
+    }
     /* postLogin(req: express.Request, res: express.Response): Promise<void>
         @param {express.Request} req: The request object
                 expects username and password in body of request
